@@ -31,8 +31,34 @@ def read_data_from_db():
     return df
 
 
+def get_column_types():
+    """Get the data types of columns from the database"""
+    df = read_data_from_db()
+    return df.dtypes.to_dict()
+
+
 def save_data_to_db(df):
-    """Save dataframe to SQLite database"""
+    """Save dataframe to SQLite database preserving original data types"""
+    # Get original column types
+    original_types = get_column_types()
+    
+    # Convert columns back to their original types
+    df = df.copy()  # Don't modify the original
+    for col, dtype in original_types.items():
+        if col in df.columns:
+            try:
+                if pd.api.types.is_numeric_dtype(dtype):
+                    # Convert to numeric, handling errors
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+                    # Preserve integer vs float
+                    if pd.api.types.is_integer_dtype(dtype):
+                        df[col] = df[col].astype('Int64')  # Nullable integer
+                else:
+                    # Keep as string/object
+                    df[col] = df[col].astype(str)
+            except Exception as e:
+                print(f"Warning: Could not convert column {col}: {e}")
+    
     conn = sqlite3.connect('sample_data.db')
     df.to_sql('sales_data', conn, if_exists='replace', index=False)
     conn.close()

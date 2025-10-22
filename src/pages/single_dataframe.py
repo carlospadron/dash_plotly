@@ -14,8 +14,8 @@ def create_dashboard_content(df):
         html.Div([
             html.H4("Database Statistics"),
             html.P(f"Total Records: {len(df)}"),
-            html.P(f"Total Sales: ${df['sales'].sum():.2f}"),
-            html.P(f"Average Sales: ${df['sales'].mean():.2f}"),
+            html.P(f"Total Sales: ${df['sales'].sum():,.2f}"),
+            html.P(f"Average Sales: ${df['sales'].mean():,.2f}"),
         ], style={'margin': '20px'}),
         
         # Charts section
