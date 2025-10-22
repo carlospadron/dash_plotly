@@ -1,0 +1,83 @@
+import pandas as pd
+from dash import html, dcc, dash_table, register_page
+import plotly.express as px
+from lib import read_data_from_db
+
+# Register this page with Dash
+register_page(__name__, path='/', name='Single DataFrame')
+
+# Read data from database
+df = read_data_from_db()
+
+# Define the layout for this page
+layout = html.Div([
+    html.H1("Sales Dashboard - Single DataFrame", style={'textAlign': 'center', 'margin': '20px'}),
+    html.Hr(),
+    
+    # Statistics section
+    html.Div([
+        html.H4("Database Statistics"),
+        html.P(f"Total Records: {len(df)}"),
+        html.P(f"Total Sales: ${df['sales'].sum():,.2f}"),
+        html.P(f"Average Sales: ${df['sales'].mean():,.2f}"),
+    ], style={'margin': '20px'}),
+    
+    # Charts section
+    html.Div([
+        html.Div([
+            html.H4("Sales by Product"),
+            dcc.Graph(
+                id='sales-by-product',
+                figure=px.bar(
+                    df.groupby('product')['sales'].sum().reset_index(),
+                    x='product',
+                    y='sales',
+                    title='Total Sales by Product',
+                    color='sales',
+                    color_continuous_scale='Viridis'
+                )
+            )
+        ], style={'width': '48%', 'display': 'inline-block'}),
+        
+        html.Div([
+            html.H4("Sales by Region"),
+            dcc.Graph(
+                id='sales-by-region',
+                figure=px.pie(
+                    df.groupby('region')['sales'].sum().reset_index(),
+                    values='sales',
+                    names='region',
+                    title='Sales Distribution by Region'
+                )
+            )
+        ], style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
+    ], style={'margin': '20px'}),
+    
+    # Data table section
+    html.Div([
+        html.H4("Data Table"),
+        dash_table.DataTable(
+            id='data-table',
+            columns=[{"name": i, "id": i} for i in df.columns],
+            data=df.to_dict('records'),
+            page_size=10,
+            export_format='xlsx',
+            export_headers='display',
+            style_table={'overflowX': 'auto'},
+            style_cell={
+                'textAlign': 'left',
+                'padding': '10px'
+            },
+            style_header={
+                'backgroundColor': 'rgb(230, 230, 230)',
+                'fontWeight': 'bold'
+            },
+            style_data_conditional=[
+                {
+                    'if': {'row_index': 'odd'},
+                    'backgroundColor': 'rgb(248, 248, 248)'
+                }
+            ]
+        )
+    ], style={'margin': '20px'})
+])
