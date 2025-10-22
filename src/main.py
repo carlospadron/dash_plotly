@@ -1,10 +1,11 @@
 from dash import Dash, html, dcc, page_container
-from src.lib import create_sample_database
+from src.lib import create_sample_database, create_sample_geo_database
 
 
 def main():
-    # Create sample database
+    # Create sample databases
     create_sample_database()
+    create_sample_geo_database()
     
     # Initialize the Dash app with multi-page support
     app = Dash(__name__, use_pages=True)
@@ -34,6 +35,15 @@ def main():
                     'margin': '0 10px',
                     'textDecoration': 'none',
                     'backgroundColor': '#27ae60',
+                    'color': 'white',
+                    'borderRadius': '5px',
+                    'display': 'inline-block'
+                }),
+                dcc.Link('Single Map', href='/map', style={
+                    'padding': '10px 20px',
+                    'margin': '0 10px',
+                    'textDecoration': 'none',
+                    'backgroundColor': '#e67e22',
                     'color': 'white',
                     'borderRadius': '5px',
                     'display': 'inline-block'
