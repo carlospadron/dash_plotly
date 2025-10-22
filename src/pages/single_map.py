@@ -172,3 +172,5 @@ def update_table_from_map(clickData, current_selection):
         return current_selection
     
     return current_selection or []
+
+# TODO: move to maplibre as per new documentation
