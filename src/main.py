@@ -1,5 +1,5 @@
 from dash import Dash, html, dcc, page_container
-from lib import create_sample_database
+from src.lib import create_sample_database
 
 
 def main():
@@ -29,7 +29,15 @@ def main():
                     'borderRadius': '5px',
                     'display': 'inline-block'
                 }),
-                # Add more page links here as you create them
+                dcc.Link('Single Editor', href='/editor', style={
+                    'padding': '10px 20px',
+                    'margin': '0 10px',
+                    'textDecoration': 'none',
+                    'backgroundColor': '#27ae60',
+                    'color': 'white',
+                    'borderRadius': '5px',
+                    'display': 'inline-block'
+                }),
             ], style={
                 'textAlign': 'center',
                 'margin': '20px',

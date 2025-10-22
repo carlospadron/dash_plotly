@@ -29,3 +29,12 @@ def read_data_from_db():
     df = pd.read_sql_query(query, conn)
     conn.close()
     return df
+
+
+def save_data_to_db(df):
+    """Save dataframe to SQLite database"""
+    conn = sqlite3.connect('sample_data.db')
+    df.to_sql('sales_data', conn, if_exists='replace', index=False)
+    conn.close()
+    print("Data saved to database successfully!")
+
