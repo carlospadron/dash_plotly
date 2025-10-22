@@ -1,0 +1,11 @@
+[project]
+name = "dash-plotly"
+version = "0.1.0"
+description = "Dash Plotly examples"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dash>=3.2.0",
+    "geopandas>=1.1.1",
+    "pandas>=2.3.3",
+]
