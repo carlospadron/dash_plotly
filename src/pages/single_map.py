@@ -1,7 +1,7 @@
 import pandas as pd
 import json
 from dash import html, dcc, dash_table, register_page, callback, Input, Output, callback_context
-import plotly.graph_objects as go
+import plotly.express as px
 from src.lib import read_geo_data_from_db
 
 # Register this page with Dash
@@ -9,47 +9,65 @@ register_page(__name__, path='/map', name='Single Map')
 
 
 def create_map_figure(df, selected_ids=None):
-    """Create a Plotly map with GeoJSON polygons"""
-    fig = go.Figure()
+    """Create a Plotly map with GeoJSON polygons using Maplibre"""
+    # Add selection indicator column
+    df = df.copy()
+    df['selected'] = df['id'].apply(lambda x: 'Selected' if selected_ids and x in selected_ids else 'Not Selected')
     
-    # Add each polygon to the map
+    # Create GeoJSON FeatureCollection from the dataframe
+    features = []
     for idx, row in df.iterrows():
-        geojson = json.loads(row['geojson'])
-        coords = geojson['coordinates'][0]
-        
-        # Extract lat/lon for the polygon
-        lons = [coord[0] for coord in coords]
-        lats = [coord[1] for coord in coords]
-        
-        # Determine if this polygon is selected
-        is_selected = selected_ids and row['id'] in selected_ids
-        
-        fig.add_trace(go.Scattermapbox(
-            lon=lons,
-            lat=lats,
-            mode='lines',
-            fill='toself',
-            fillcolor='rgba(255, 0, 0, 0.3)' if is_selected else 'rgba(0, 123, 255, 0.3)',
-            line=dict(width=2, color='red' if is_selected else 'blue'),
-            name=row['name'],
-            text=f"{row['name']}<br>Population: {row['population']:,}<br>Area: {row['area_km2']} km²",
-            hoverinfo='text',
-            customdata=[row['id']]
-        ))
+        geojson_geom = json.loads(row['geojson'])
+        feature = {
+            "type": "Feature",
+            "geometry": geojson_geom,
+            "id": str(row['id']),
+            "properties": {
+                "id": row['id'],
+                "name": row['name'],
+                "population": row['population'],
+                "area_km2": row['area_km2'],
+                "selected": row['selected']
+            }
+        }
+        features.append(feature)
     
-    # Update map layout
+    geojson_data = {
+        "type": "FeatureCollection",
+        "features": features
+    }
+    
+    # Create choropleth map with Maplibre
+    fig = px.choropleth_map(
+        df,
+        geojson=geojson_data,
+        locations='id',
+        featureidkey='properties.id',
+        color='selected',
+        color_discrete_map={'Selected': 'red', 'Not Selected': 'blue'},
+        hover_name='name',
+        hover_data={
+            'id': False,
+            'selected': False,
+            'population': ':,',
+            'area_km2': ':.1f'
+        },
+        labels={
+            'population': 'Population',
+            'area_km2': 'Area (km²)'
+        },
+        map_style='open-street-map',
+        center={"lat": 40.72, "lon": -74.01},
+        zoom=11,
+        opacity=0.5
+    )
+    
+    # Update layout for Maplibre
     fig.update_layout(
-        mapbox=dict(
-            style='open-street-map',
-            center=dict(lat=40.72, lon=-74.01),
-            zoom=11
-        ),
-        showlegend=True,
         height=600,
         margin=dict(l=0, r=0, t=0, b=0),
-        clickmode='event+select',
         uirevision='constant',  # Preserve zoom/pan state
-        hovermode='closest'
+        showlegend=True
     )
     
     return fig
@@ -156,21 +174,26 @@ def update_table_from_map(clickData, current_selection):
     
     # Only process if the map was clicked
     if 'geo-map' in trigger and clickData and 'points' in clickData:
-        # Get the clicked polygon's curve number (trace index)
-        curve_number = clickData['points'][0]['curveNumber']
+        # Get the clicked polygon's location (which is the id)
+        clicked_id = clickData['points'][0]['location']
+        
+        # Convert to int
+        clicked_id = int(clicked_id)
+        
+        # Read data to find the row index
+        df = read_geo_data_from_db()
+        row_index = df[df['id'] == clicked_id].index[0]
         
         # Initialize selection if None
         if current_selection is None:
             current_selection = []
         
         # Toggle selection: remove if already selected, add if not
-        if curve_number in current_selection:
-            current_selection.remove(curve_number)
+        if row_index in current_selection:
+            current_selection.remove(row_index)
         else:
-            current_selection.append(curve_number)
+            current_selection.append(row_index)
         
         return current_selection
     
     return current_selection or []
-
-# TODO: move to maplibre as per new documentation

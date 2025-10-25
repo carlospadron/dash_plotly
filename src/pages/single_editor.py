@@ -7,7 +7,7 @@ register_page(__name__, path='/editor', name='Single Editor')
 
 
 # Define the layout for this page
-def layout(**kwargs):
+def layout():
     # Read data from database
     df = read_data_from_db()
     
